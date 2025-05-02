@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
+#from googlemaps import Client
 import requests
 import logging
-import googlemaps
 import os
-
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
@@ -12,13 +11,18 @@ from fastapi.security import APIKeyHeader
 load_dotenv()
 
 # Configuration
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")  # set in your environment
+GOOGLE_API_KEY = os.environ["GOOGLEMAPS_API_KEY"]  # set in your environment
 ALERT_API_URL = "https://example.com/alert-endpoint"
 MCP_SERVER_URL = "https://mcp.example.com/reasoning"  # hypothetical
 
 # Google Maps client
-gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
+#gmaps = Client(key=GOOGLE_API_KEY)
 
+# address = '1600 Amphitheatre Parkway, Mountain View, CA'
+# geocode_result = gmaps.geocode(address)
+# if geocode_result:
+#     location = geocode_result[0]['geometry']['location']
+#     print(f"Latitude: {location['lat']}, Longitude: {location['lng']}")
 
 # Initialize FastAPI
 app = FastAPI()
@@ -71,34 +75,40 @@ def send_low_battery_alert(lat: float, lon: float, direction: float, battery_lev
 def get_route_to_nearest_charger(lat: float, lon: float):
     try:
         # Step 1: Find nearby EV chargers
-        places_result = gmaps.places_nearby(
-            location=(lat, lon),
-            radius=10000,  # 10 km
-            keyword="EV charger"
-        )
+        # places_result = gmaps.places_nearby(
+        #     location=(lat, lon),
+        #     radius=10000,  # 10 km
+        #     keyword="EV charger"
+        # )
         
-        if not places_result.get("results"):
-            logger.warning("No chargers found nearby")
-            return {"message": "No chargers found nearby"}
+        # if not places_result.get("results"):
+        #     logger.warning("No chargers found nearby")
+        #     return {"message": "No chargers found nearby"}
 
-        nearest = places_result["results"][0]
-        charger_location = nearest["geometry"]["location"]
-        charger_name = nearest.get("name", "EV Charger")
+        # nearest = places_result["results"][0]
+        # charger_location = nearest["geometry"]["location"]
+        # charger_name = nearest.get("name", "EV Charger")
 
         # Step 2: Get shortest route to charger
-        directions = gmaps.directions(
-            origin=(lat, lon),
-            destination=(charger_location["lat"], charger_location["lng"]),
-            mode="driving"
-        )
+        # directions = gmaps.directions(
+        #     origin=(lat, lon),
+        #     destination=(charger_location["lat"], charger_location["lng"]),
+        #     mode="driving"
+        # )
 
+        # return {
+        #     "destination": charger_name,
+        #     "route_summary": directions[0]["summary"] if directions else "Route unavailable",
+        #     "steps": [
+        #         step["html_instructions"] for step in directions[0]["legs"][0]["steps"]
+        #     ] if directions else []
+        # }
         return {
-            "destination": charger_name,
-            "route_summary": directions[0]["summary"] if directions else "Route unavailable",
-            "steps": [
-                step["html_instructions"] for step in directions[0]["legs"][0]["steps"]
-            ] if directions else []
-        }
+            "destination": f"ev charger closest to me {(lat, lon)}",
+            "route_summary": "provide the final route to available and powered EV charger",
+            "steps": "find next charger"}
+
+
 
     except Exception as e:
         logger.error(f"Error finding route: {e}")

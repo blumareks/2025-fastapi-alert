@@ -1,4 +1,3 @@
 fastapi
-googlemaps
-dotenv
+dotenv-python
 pydantic
