@@ -1,21 +1,22 @@
-# Base image (must match OpenShift's S2I Python builder, or a compatible one)
-FROM python:3.12-slim
+# Use official Python image as base
+FROM python:3.11-slim
 
-# Install OS dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Create application directory
-WORKDIR /opt/app
+# Set work directory
+WORKDIR /app
 
-# Copy source code and requirements
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements and install Python packages using uv
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Copy application code
+COPY main.py .
 
-# Use uvicorn as the ASGI server
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8080", "main:app"]
+# Expose port
+EXPOSE 8080
+
+# Start FastAPI server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
