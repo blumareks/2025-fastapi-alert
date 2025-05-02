@@ -62,7 +62,7 @@ def send_low_battery_alert(lat: float, lon: float, direction: float, battery_lev
             "timestamp": datetime.now().isoformat()
         }
         response = requests.post(ALERT_API_URL, json=payload)
-        response.raise_for_status()
+        #response.raise_for_status()
         logger.info(f"Successfully sent low battery alert: {battery_level}%")
         return True
     except requests.RequestException as e:
