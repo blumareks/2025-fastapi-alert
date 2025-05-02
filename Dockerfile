@@ -27,4 +27,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Use uvicorn as the ASGI server
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8080", "$APP_MODULE"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8080","main:app"]
