@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
-from datetime import datetime
-#from googlemaps import Client
+
+from datetime import datetime, timedelta
+from googlemaps import Client
 import requests
 import logging
 import os
@@ -15,8 +16,28 @@ GOOGLE_API_KEY = os.environ["GOOGLEMAPS_API_KEY"]  # set in your environment
 ALERT_API_URL = "https://example.com/alert-endpoint"
 MCP_SERVER_URL = "https://mcp.example.com/reasoning"  # hypothetical
 
+# State management
+state = {
+    "charge_ok": True,
+    "time_received": None,
+    "location": None
+}
+
+# Define request model
+class BatteryAlertRequest(BaseModel):
+    latitude: float
+    longitude: float
+    direction: float
+    battery_level: float = Field(..., alias="battery_percentage")
+
+def set_low_battery_state(lat, lon):
+    state["charge_ok"] = False
+    state["time_received"] = datetime.now()
+    state["location"] = (lat, lon)
+    
+
 # Google Maps client
-#gmaps = Client(key=GOOGLE_API_KEY)
+gmaps = Client(key=GOOGLE_API_KEY)
 
 # address = '1600 Amphitheatre Parkway, Mountain View, CA'
 # geocode_result = gmaps.geocode(address)
@@ -43,17 +64,19 @@ logger = logging.getLogger(__name__)
 # Replace with the actual URL where the alert should be sent
 ALERT_API_URL = "https://example.com/alert-endpoint"
 
-# Define the request model
-class BatteryAlertRequest(BaseModel):
-    latitude: float
-    longitude: float
-    direction: float
-    battery_level: float = Field(..., alias="battery_percentage")
+# # Define the request model
+# class BatteryAlertRequest(BaseModel):
+#     latitude: float
+#     longitude: float
+#     direction: float
+#     battery_level: float = Field(..., alias="battery_percentage")
 
 
 # Alert sender function
 def send_low_battery_alert(lat: float, lon: float, direction: float, battery_level: float) -> bool:
     try:
+        set_low_battery_state(lat, lon)
+
         payload = {
             "latitude": lat,
             "longitude": lon,
@@ -68,6 +91,45 @@ def send_low_battery_alert(lat: float, lon: float, direction: float, battery_lev
     except requests.RequestException as e:
         logger.error(f"Failed to send alert: {e}")
         return False
+
+def find_nearest_charger(lat, lon):
+    places = gmaps.places_nearby(location=(lat, lon), radius=5000, keyword="EV charger")
+    if places['results']:
+        charger = places['results'][0]
+        """
+        {'destination_addresses': ['2860 16th St, San Francisco, CA 94103, USA'], 'origin_addresses': ['5911 US-101, San Francisco, CA 94103, USA'], 
+        'rows': 
+        [{'elements': 
+        [{'distance': {'text': '1.2 km', 'value': 1218}, 
+        'duration': {'text': '5 mins', 'value': 295}, 'status': 'OK'}]}], 
+        'status': 'OK'}"""
+        distance_mtx = gmaps.distance_matrix((lat, lon), charger["geometry"]["location"], mode="driving")
+        time_to = distance_mtx["rows"][0]["elements"][0]["duration"]["text"]
+        print(time_to)
+        distance_to = distance_mtx["rows"][0]["elements"][0]["distance"]["value"]
+        print(distance_to)
+        return {
+            "name": charger['name'],
+            "distance_km": distance_to,#1.0  # Simplified: real distance calculation can use gmaps.distance_matrix
+            "time_to":time_to
+        }
+    return {"name": "Unknown", "distance_km": "Unknown", "time_to":"unknown"}
+
+@app.get("/charge-status")
+def get_charge_status():
+    if not state["charge_ok"] and state["time_received"]:
+        elapsed = datetime.now() - state["time_received"]
+        if elapsed > timedelta(minutes=5):
+            state["charge_ok"] = True
+            state["time_received"] = None
+            state["location"] = None
+
+    if state["charge_ok"]:
+        return {"message": "Your vehicle charge is okay."}
+    else:
+        lat, lon = state["location"]
+        charger = find_nearest_charger(lat, lon)
+        return {"message": f"Your battery charge is critical, recharge shortly - the closest charger is at {charger['name']}, {charger['time_to']} driving, and is {charger['distance_km']}m away."}
 
 
 
