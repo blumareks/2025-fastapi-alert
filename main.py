@@ -127,6 +127,7 @@ def get_charge_status():
     if state["charge_ok"]:
         return {"message": "Your vehicle charge is okay."}
     else:
+        state["charge_ok"] = True
         lat, lon = state["location"]
         charger = find_nearest_charger(lat, lon)
         return {"message": f"Your battery charge is below 20%, recharge shortly -- I've looked nearby stations and the closest is {charger['name']}, {charger['time_to']} and {int(int(charger['distance_km'])*0.00062137*10)/10} miles away"}
