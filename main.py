@@ -115,6 +115,21 @@ def find_nearest_charger(lat, lon):
         }
     return {"name": "Unknown", "distance_km": "Unknown", "time_to":"unknown"}
 
+
+# Use global state variable for simplicity (replace with DB or cache in production)
+malfunction_state = {"active": False}
+
+@app.post("/battery-malfunction/on")
+def battery_malfunction_on():
+    malfunction_state["active"] = True
+    return {"status": "malfunction_on"}
+
+@app.post("/battery-malfunction/off")
+def battery_malfunction_off():
+    malfunction_state["active"] = False
+    return {"status": "malfunction_off"}
+
+
 @app.get("/charge-status")
 def get_charge_status():
     if not state["charge_ok"] and state["time_received"]:
@@ -124,13 +139,19 @@ def get_charge_status():
             state["time_received"] = None
             state["location"] = None
 
+    malfuntion_text = ""
+
+    if malfunction_state["active"]:
+        malfuntion_text = "There is an DTC malfunction code P0AFA active - it is for High-voltage battery system voltage imbalance.  To remedy it please go to a nearest service shop to undertake the software update for improved cell-balancing logic."
+
+
     if state["charge_ok"]:
-        return {"message": "Your vehicle charge is okay."}
+        return {"message": "Your vehicle charge is okay. "+ malfuntion_text}
     else:
         state["charge_ok"] = True
         lat, lon = state["location"]
         charger = find_nearest_charger(lat, lon)
-        return {"message": f"Your battery charge is below 20%, recharge shortly -- I've looked nearby stations and the closest is {charger['name']}, {charger['time_to']} and {int(int(charger['distance_km'])*0.00062137*10)/10} miles away"}
+        return {"message": f"Your battery charge is below 20%, recharge shortly -- I've looked nearby stations and the closest is {charger['name']}, {charger['time_to']} and {int(int(charger['distance_km'])*0.00062137*10)/10} miles away. "+ malfuntion_text}
 
 
 # Function to get shortest route to nearest EV charger
