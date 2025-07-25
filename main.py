@@ -155,11 +155,11 @@ def get_charge_status():
     malfuntion_text = ""
 
     if malfunction_state["active"]:
-        malfuntion_text = "There is an DTC malfunction code P0AFA active - it is for High-voltage battery system voltage imbalance.  To remedy it please go to a nearest service shop to undertake the software update for improved cell-balancing logic."
+        malfuntion_text = "There is a Battery System Management malfunction active - it is for High-voltage battery system voltage imbalance.  There is a known remedy for it by updating the Battery Software.  Please go to a nearest service shop to undertake the software update for improved cell-balancing logic."
 
 
     if state["charge_ok"]:
-        return {"message": "Your vehicle charge is okay. "+ malfuntion_text}
+        return {"message": "Status - "+ malfuntion_text}
     else:
         state["charge_ok"] = True
         lat, lon = state["location"]
