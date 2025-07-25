@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -56,6 +57,14 @@ async def get_api_key(api_key: str = Security(api_key_header)):
         )
     return api_key
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], #origins,  # Or ["*"] for all origins (less secure)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
