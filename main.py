@@ -131,7 +131,7 @@ def battery_malfunction_off():
 
 @app.get("/battery-status")
 def get_battery_status():
-    return {"message": f"{malfunction_state["active"]}"}
+    return {"message": malfunction_state["active"]}
 
 
 @app.get("/charge-status")
