@@ -156,7 +156,8 @@ def get_charge_status():
 
     if malfunction_state["active"]:
         malfuntion_text = "There is a Battery System Management malfunction active - it is for High-voltage battery system voltage imbalance.  There is a known remedy for it by updating the Battery Software.  Please go to a nearest service shop to undertake the software update for improved cell-balancing logic."
-
+    else:
+        malfuntion_text = "OK"
 
     if state["charge_ok"]:
         return {"message": "Status - "+ malfuntion_text}
@@ -164,7 +165,7 @@ def get_charge_status():
         state["charge_ok"] = True
         lat, lon = state["location"]
         charger = find_nearest_charger(lat, lon)
-        return {"message": f"Your battery charge is below 20%, recharge shortly -- I've looked nearby stations and the closest is {charger['name']}, {charger['time_to']} and {int(int(charger['distance_km'])*0.00062137*10)/10} miles away. "+ malfuntion_text}
+        return {"message": f"Your battery charge is below 20%, recharge shortly -- I've looked nearby stations and the closest is {charger['name']}, {charger['time_to']} and {int(int(charger['distance_km'])*0.00062137*10)/10} miles away. \n Status - " + malfuntion_text}
 
 
 # Function to get shortest route to nearest EV charger
